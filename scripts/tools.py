@@ -1,16 +1,12 @@
 import os
 import glob
-import time
 import subprocess
-import requests
 import numpy as np
 import pandas as pd
-import xarray as xr
 import geopandas as gpd
 from scipy import ndimage
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 from cmcrameri import cm
 
 def oversampling(source_lon, source_lat):
@@ -37,7 +33,7 @@ def oversampling(source_lon, source_lat):
     lat_res, lon_res = 0.01, 0.01
 
     # Oversample for 2019, 2020, 2021, 2022
-    for idx,year in range(2019,2023):
+    for idx,year in enumerate(range(2019,2023)):
         name = f"{idx+1}"
         start_time = f"{year}-01-01"
         end_time = f"{year+1}-01-01"
@@ -179,7 +175,8 @@ def emissions(source_lon, source_lat):
     for idx,year in enumerate(range(2019,2023)):
 
         # Read in the oversampled data and add plume/background masks
-        df = masks(idx, source_lon, source_lat)
+        name = idx + 1
+        df = masks(name, source_lon, source_lat)
 
         # Convert to a GeoDataFrame for easy plotting
         # Plot ∆XCH4 [ppb] which is above background
@@ -231,5 +228,9 @@ def emissions(source_lon, source_lat):
 
         E_min = np.percentile(E_i, 2.5)
         E_max = np.percentile(E_i, 97.5)
+
+    # Clean up files
+    [os.remove(f"{idx+1}.pkl") for idx in range(0,4)]
+    [os.remove(f) for f in glob.glob("slurm*.out")]
 
     return fig, E_means, E_min, E_max
