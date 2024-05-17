@@ -143,13 +143,13 @@ def emissions(source_lon, source_lat):
     -------
     fig : matplotlib.figure.Figure
         Figure with four subplots of oversampled data
-    E_mean : numpy.ndarray
+    e_mean : numpy.ndarray
         Best estimates of the emissions each of the four years
-    E_min : numpy.ndarray
+    e_min : numpy.ndarray
         Lower bound of the 95th CI for emissions
-    E_max : numpy.ndarray
+    e_max : numpy.ndarray
         Upper bound of the 95th CI for emissions 
-    U : numpy.ndarray
+    wind : numpy.ndarray
         Average wind for each of the four years in meters per second
     """
 
@@ -160,12 +160,12 @@ def emissions(source_lon, source_lat):
         return
 
     # Initialize four returns of this function
-    fig, axs = plt.subplots(1, 4, figsize=(12, 5),
+    fig, axs = plt.subplots(1, 4, figsize=(11, 3),
                             subplot_kw={"projection": ccrs.PlateCarree()})
-    E_mean = np.zeros((4))
-    E_min  = np.zeros((4))
-    E_max  = np.zeros((4))
-    U      = np.zeros((4))
+    e_mean = np.zeros((4))
+    e_min  = np.zeros((4))
+    e_max  = np.zeros((4))
+    wind   = np.zeros((4))
 
     # Consistent formatting for each of the four subplots
     extent = [float(f"{round(source_lon, 2) - 0.3:.2f}")-0.005,
@@ -191,15 +191,14 @@ def emissions(source_lon, source_lat):
         bkg_xch4 = (gdf[gdf["bkg"]]["xch4_ppb"].mean()) # [ppb]
         gdf["delta_xch4"] = gdf["xch4_ppb"] - bkg_xch4
         gdf[density_mask].plot(ax=axs[idx], column="delta_xch4",
-            cmap=cm.navia, legend=True, vmin=-6, vmax=6,
-            legend_kwds={"label":"$\Delta$XCH$_4$ [ppb]",
-                         "pad": 0.04, "extend":"both"})
+            cmap=cm.navia, vmin=-6, vmax=6)
         axs[idx].scatter(source_lon, source_lat, marker="o", 
                          edgecolor="k", facecolor="None")
         gdf[gdf["plume"]].dissolve("plume").plot(ax=axs[idx],color="None",
                                                  linewidth=1.5,alpha=0.5)
         gdf[gdf["bkg"]].dissolve("bkg").plot(ax=axs[idx],color="None",alpha=0.5,
                                              linewidth=1.5,linestyle="dashdot")
+        axs[idx].set_extent(extent, crs=ccrs.PlateCarree())
 
         # Calculate emissions using means
         gdf["delta_omega"] = ((gdf["xch4_ppb"]-bkg_xch4)*1e-9*
@@ -209,15 +208,15 @@ def emissions(source_lon, source_lat):
         U = df.attrs["wind_speed_m_s"]*60*60 # [m/h]
         sums = (gdf[gdf["plume"]].groupby("lon_center")
                 [["delta_omega_times_height"]].sum()) # [kg/m]
-        E_mean[idx] = np.mean(U*sums.values.flatten()*24*365*1e-6) # [kt/yr]
-        U[idx] = df.attrs["wind_speed_m_s"] # [m/s]
+        e_mean[idx] = np.mean(U*sums.values.flatten()*24*365*1e-6) # [kt/yr]
+        wind[idx] = df.attrs["wind_speed_m_s"] # [m/s]
 
         # Calculate emission uncertainty using bootstrap
         E_i = np.zeros((10000)) * np.nan
         U_arr = np.array((df.attrs["U_m_s"]**2 + df.attrs["V_m_s"]**2)**0.5)
         B_arr = np.array(gdf[gdf["bkg"]]["xch4_ppb"])
 
-        for i in range(len(E_mean)):
+        for i in range(len(E_i)):
             U = np.mean(np.random.choice(U_arr, (len(U_arr),)))*60*60 # [m/h]
             B = np.mean(np.random.choice(B_arr, (len(B_arr),))) # [ppb]
             gdf["delta_omega"] = ((gdf["xch4_ppb"]-B)*1e-9*
@@ -230,11 +229,11 @@ def emissions(source_lon, source_lat):
             T = np.mean(np.random.choice(T_arr, (len(T_arr),))) # [kg/m]
             E_i[i] = U*T*24*365*1e-6 # [kt/yr]
 
-        E_min = np.percentile(E_i, 2.5)
-        E_max = np.percentile(E_i, 97.5)
+        e_min[idx] = np.percentile(E_i, 2.5)
+        e_max[idx] = np.percentile(E_i, 97.5)
 
     # Clean up files
     [os.remove(f"{idx+1}.pkl") for idx in range(0,4)]
     [os.remove(f) for f in glob.glob("slurm*.out")]
 
-    return fig, E_mean, E_min, E_max
+    return fig, e_mean, e_min, e_max, wind
