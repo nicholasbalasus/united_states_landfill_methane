@@ -149,10 +149,12 @@ def emissions(source_lon, source_lat):
         Lower bound of the 95th CI for emissions
     E_max : numpy.ndarray
         Upper bound of the 95th CI for emissions 
+    U : numpy.ndarray
+        Average wind for each of the four years in meters per second
     """
 
     # Make sure all oversampling jobs are finished
-    file_exists = [os.path.exists(f"{idx}.pkl") for idx in range(0,4)]
+    file_exists = [os.path.exists(f"{idx+1}.pkl") for idx in range(0,4)]
     if not all(file_exists):
         print("Error - not all oversampling jobs have finished.")
         return
@@ -163,6 +165,7 @@ def emissions(source_lon, source_lat):
     E_mean = np.zeros((4))
     E_min  = np.zeros((4))
     E_max  = np.zeros((4))
+    U      = np.zeros((4))
 
     # Consistent formatting for each of the four subplots
     extent = [float(f"{round(source_lon, 2) - 0.3:.2f}")-0.005,
@@ -206,14 +209,15 @@ def emissions(source_lon, source_lat):
         U = df.attrs["wind_speed_m_s"]*60*60 # [m/h]
         sums = (gdf[gdf["plume"]].groupby("lon_center")
                 [["delta_omega_times_height"]].sum()) # [kg/m]
-        E_means[idx] = U*sums.values.flatten()*24*365*1e-6 # [kt/yr]
+        E_mean[idx] = np.mean(U*sums.values.flatten()*24*365*1e-6) # [kt/yr]
+        U[idx] = df.attrs["wind_speed_m_s"] # [m/s]
 
         # Calculate emission uncertainty using bootstrap
         E_i = np.zeros((10000)) * np.nan
         U_arr = np.array((df.attrs["U_m_s"]**2 + df.attrs["V_m_s"]**2)**0.5)
         B_arr = np.array(gdf[gdf["bkg"]]["xch4_ppb"])
 
-        for i in range(len(E_means)):
+        for i in range(len(E_mean)):
             U = np.mean(np.random.choice(U_arr, (len(U_arr),)))*60*60 # [m/h]
             B = np.mean(np.random.choice(B_arr, (len(B_arr),))) # [ppb]
             gdf["delta_omega"] = ((gdf["xch4_ppb"]-B)*1e-9*
@@ -223,7 +227,7 @@ def emissions(source_lon, source_lat):
             sums = (gdf[gdf["plume"]].groupby("lon_center")
                     [["delta_omega_times_height"]].sum()) # [kg/m]
             T_arr = np.array(sums.values.flatten())
-            T = np.mean(np.random.choice(T_array, (len(T_array),))) # [kg/m]
+            T = np.mean(np.random.choice(T_arr, (len(T_arr),))) # [kg/m]
             E_i[i] = U*T*24*365*1e-6 # [kt/yr]
 
         E_min = np.percentile(E_i, 2.5)
@@ -233,4 +237,4 @@ def emissions(source_lon, source_lat):
     [os.remove(f"{idx+1}.pkl") for idx in range(0,4)]
     [os.remove(f) for f in glob.glob("slurm*.out")]
 
-    return fig, E_means, E_min, E_max
+    return fig, E_mean, E_min, E_max
