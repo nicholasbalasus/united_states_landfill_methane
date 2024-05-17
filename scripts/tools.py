@@ -41,7 +41,7 @@ def oversampling(source_lon, source_lat):
 
         # Submit the job using SLURM
         subprocess.run([
-            "sbatch", "-p", "sapphire,serial_requeue", "-t", "180",
+            "sbatch", "-p", "sapphire,serial_requeue,huce_cascade", "-t", "180",
             "--mem", "128000", "-c", "48", "--wrap", (f"source ~/.bashrc; "
             f"micromamba activate ldf_env; "
             f"python ../scripts/perform-oversampling.py "
