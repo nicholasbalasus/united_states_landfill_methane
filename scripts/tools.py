@@ -152,7 +152,7 @@ def emissions(source_lon, source_lat):
     """
 
     # Make sure all oversampling jobs are finished
-    files_exists = [os.path.exists(f"{idx}.pkl") for idx in range(0,4)]
+    file_exists = [os.path.exists(f"{idx}.pkl") for idx in range(0,4)]
     if not all(file_exists):
         print("Error - not all oversampling jobs have finished.")
         return
