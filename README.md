@@ -28,4 +28,4 @@ sbatch -J hrrr -p sapphire -t 0-24:00 --mem=500000 -c 24 \
 done
 ```
 
-In `notebooks/`, `scripts/perform-oversampling.py` is called along with help from `scripts/emissions-functions.py`. There are notebooks for each of the five landfills included in this paper.
+In `notebooks/`, `scripts/perform-oversampling.py` is called along with help from `scripts/tools.py`. There are notebooks for each of the five landfills included in the paper.
