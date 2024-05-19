@@ -84,7 +84,7 @@ def masks(name, source_lon, source_lat):
     xch4_2d[layers_2d < 40] = np.nan
 
     # First, take 98th percentile
-    plume_mask = xch4_2d > np.nanpercentile(xch4_2d, 98)
+    plume_mask = xch4_2d > np.nanpercentile(xch4_2d, 97)
 
     # Run the plume mask through a 3 x 3 median filter
     plume_mask = ndimage.median_filter(plume_mask, 3)
@@ -193,11 +193,11 @@ def emissions(source_lon, source_lat):
         gdf[density_mask].plot(ax=axs[idx], column="delta_xch4",
             cmap=cm.navia, vmin=-6, vmax=6)
         axs[idx].scatter(source_lon, source_lat, marker="o", 
-                         edgecolor="k", facecolor="None")
+                         edgecolor="k", facecolor="k", s=5)
         gdf[gdf["plume"]].dissolve("plume").plot(ax=axs[idx],color="None",
-                                                 linewidth=1.5,alpha=0.5)
+                                                 linewidth=1.0,alpha=0.5)
         gdf[gdf["bkg"]].dissolve("bkg").plot(ax=axs[idx],color="None",alpha=0.5,
-                                             linewidth=1.5,linestyle="dashdot")
+                                             linewidth=1.0,linestyle="dashdot")
         axs[idx].set_extent(extent, crs=ccrs.PlateCarree())
 
         # Calculate emissions using means
