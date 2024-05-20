@@ -83,11 +83,10 @@ def masks(name, source_lon, source_lat):
         layers_2d[iy,ix] = subset.iloc[0]["layers_satellite_pixels"]
     xch4_2d[layers_2d < 40] = np.nan
 
-    # First, take 98th percentile
-    plume_mask = xch4_2d > np.nanpercentile(xch4_2d, 97)
-
-    # Run the plume mask through a 3 x 3 median filter
-    plume_mask = ndimage.median_filter(plume_mask, 3)
+    # Plume mask is XCH4 above the 98th percentile in the scene
+    # Then the plume mask is run through a 5 x 5 pixel median filter
+    plume_mask = xch4_2d > np.nanpercentile(xch4_2d, 98)
+    plume_mask = ndimage.median_filter(plume_mask, 5)
 
     # Finally, only keep pixels in continuous chunk closest to the source
     labeled_plume, num_features = ndimage.label(plume_mask)
@@ -96,18 +95,16 @@ def masks(name, source_lon, source_lat):
     plume_mask = np.where((labeled_plume == np.argmin(lat_dist) + 1),
                            plume_mask, False)
 
-    # Bkg mask is 0.2° x 0.19° region that is 0.1° upwind of plume mask/source
-    i = np.argmin(lon_2d[plume_mask])
-    ref_lon = min(lon_2d[plume_mask][i],
-                  lon_2d.flat[np.abs(lon_2d - source_lon).argmin()])
+    # Bkg mask is ~0.2° x 0.2° region that is ~0.1° upwind of plume mask/source
+    ref_lon = lon_2d.flat[np.abs(lon_2d - source_lon).argmin()]
     ref_lat = lat_2d.flat[np.abs(lat_2d - source_lat).argmin()]
     bkg_mask = np.zeros_like(plume_mask, dtype=bool)
     start_iy,start_ix = np.where((lon_2d == ref_lon) &\
                                  (lat_2d == ref_lat))
 
     for iy,ix in np.ndindex(plume_mask.shape):
-        if (abs(ix-start_ix) <= 24
-            and abs(ix-start_ix) >= 5
+        if (abs(ix-start_ix) <= 27
+            and abs(ix-start_ix) >= 8
             and lon_2d[iy,ix] < ref_lon
             and abs(iy-start_iy) <= 9):
             bkg_mask[iy,ix] = True
