@@ -134,6 +134,7 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
             key = "Annual Quantity Of Recovered MethaneHH4"
             if data[key].split("\n")[0] == "(":
                 if verbose:
+                    df.loc[idx,"Recovered"] = np.nan
                     print(f"Missing {key} for {id} & {year}... setting NaN")
             else:
                 df.loc[idx,"Recovered"] = float(data[key].split("\n")[0])
@@ -142,6 +143,7 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
             if data[key].split("\n")[0] == "(":
                 if verbose:
                     print(f"Missing {key} for {id} & {year}... setting NaN")
+                    df.loc[idx,"Collection_Eff"] = np.nan
             else:
                 df.loc[idx,"Collection_Eff"] = float(data[key].split("\n")[0])
             
@@ -152,6 +154,7 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
                 df.loc[idx,"If_Gen_Rec_0"] = True
             else:
                 if verbose:
+                    df.loc[idx,"If_Gen_Rec_0"] = np.nan
                     print(f"Missing {key} for {id} & {year}... setting NaN")
 
         # Classify the type of report from the landfill
