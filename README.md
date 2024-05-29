@@ -16,7 +16,7 @@ The data needed are (1) blended TROPOMI+GOSAT and (2) HRRR winds. First, go to `
 # Blended TROPOMI+GOSAT
 sbatch -J blended -p sapphire -t 0-24:00 --mem=112000 -c 112 \
        --wrap "source ~/.bashrc; micromamba activate ldf_env; \
-               python -B -m scripts.download-blended-tropomi"
+               python -B -m scripts.download-blended"
 
 # HRRR Winds
 months=()
@@ -24,7 +24,7 @@ for i in {0..48}; do months+=( $(date -d "20190101+${i} month" +%Y-%m-%d) ); don
 for i in {0..47}; do
 sbatch -J hrrr -p sapphire -t 0-24:00 --mem=500000 -c 24 \
         --wrap "source ~/.bashrc; micromamba activate ldf_env; \
-        python -B -m scripts.download-hrrr-winds ${months[i]} ${months[i+1]}"
+        python -B -m scripts.download-hrrr ${months[i]} ${months[i+1]}"
 done
 ```
 
