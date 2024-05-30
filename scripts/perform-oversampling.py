@@ -229,7 +229,7 @@ if __name__ == "__main__":
         for file in files:
             with xr.open_dataset(file) as ds:
                 ds_mean = ds.sel(y=ys, x=xs).mean(dim=["y","x"])
-                t = np.append(t, ds_mean["t"].values)
+                t = np.append(t, ds_mean["time"].values)
                 u = np.append(u, ds_mean["u"].values)
                 v = np.append(v, ds_mean["v"].values)
 
