@@ -7,6 +7,7 @@ import multiprocessing
 import shapely.geometry as geometry
 import numpy as np
 import time
+import re
 import geopandas as gpd
 from pyproj import Geod
 import xarray as xr
@@ -130,16 +131,19 @@ if __name__ == "__main__":
             valid2 = sat_polygons.intersects(region)
 
             # Calculate the area in square meters
+            # Also get the orbit number for each observation
             polygons = list(sat_polygons[valid2])
             geod = Geod(ellps="WGS84")
-            areas = []
+            areas, orbits = [],[]
             for i in range(len(polygons)):
                 areas.append(geod.geometry_area_perimeter(polygons[i])[0])
+                orbits.append(re.search(r'_(\d{5})_', file).groups(0)[0])
 
             # Make a DataFrame that only includes our valid values
             satellite_data = pd.DataFrame(
                 {"lat_center": ds["latitude"].values[valid1][valid2],
                  "lon_center": ds["longitude"].values[valid1][valid2],
+                 "orbit_number": orbits,
                  "time_utc": satellite_time[valid1][valid2],
                  "polygon": polygons,
                  "polygon_area_m2": areas,
@@ -196,7 +200,7 @@ if __name__ == "__main__":
         # Now, perform the wind rotation on the remaining polygons.            
         # Use a sample HRRR file to get the x,y indexes of the grid cells
         # within 5 km of the source coordinates.
-        file = f"{hrrr_dir}/hrrr_winds_2019-01-01.nc"
+        file = f"{hrrr_dir}/hrrr_2019-01-01.nc"
         with xr.open_dataset(file) as ds:
             hrrr_lons = ds["lon"].values - 360
             hrrr_lats = ds["lat"].values
@@ -305,8 +309,8 @@ if __name__ == "__main__":
         satellite_polygons = gpd.GeoSeries(satellite_df["polygon"])
 
         # Determine which variables to oversample
-        do_not_oversample = ["lat_center","lon_center","time_utc",
-                             "polygon","polygon_area_m2","u","v"]
+        do_not_oversample = ["lat_center","lon_center","orbit_number",
+                             "time_utc","polygon","polygon_area_m2","u","v"]
         vars = [v for v in satellite_df.keys() if v not in do_not_oversample]
 
         # Loop through each grid cell on the oversampling grid.
@@ -362,6 +366,10 @@ if __name__ == "__main__":
             np.sqrt(satellite_df["u"]**2 + satellite_df["v"]**2))
         oversampled_data.attrs["U_m_s"] = satellite_df["u"]
         oversampled_data.attrs["V_m_s"] = satellite_df["v"]
+
+    # Put times and orbit numbers as an attribute in the DataFrame.
+    oversampled_data.attrs["observation_times"] = satellite_df["time_utc"]
+    oversampled_data.attrs["orbit_numbers"] = satellite_df["orbit_number"]
 
     oversampled_data.to_pickle(f"{name}.pkl")
     print(f"Time elapsed --> {(time.perf_counter()-s)/60:.2f} min")
