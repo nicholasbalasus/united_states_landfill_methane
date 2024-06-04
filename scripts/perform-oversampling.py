@@ -284,7 +284,21 @@ if __name__ == "__main__":
         valid_idx = sat_polygons.intersects(oversampling_region)
         satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
+    # If there are <= 5 observations in a given orbit, drop the data.
+    # This is a quality filter.
+    observations_per_orbit = satellite_df["orbit_number"].value_counts()
+    idx_to_keep = []
+    dropped_for_data_density = 0
+    for idx in satellite_df.index:
+        orbit = satellite_df.loc[idx,"orbit_number"]
+        if observations_per_orbit.loc[orbit] > 5:
+            idx_to_keep.append(idx)
+        else:
+            dropped_for_data_density += 1
+    satellite_df = satellite_df.loc[idx_to_keep].reset_index(drop=True)
+
     print(f"Number of observations   --> {len(satellite_df)}")
+    print(f"Dropped for low density -->  {dropped_for_data_density}")
     print(f"Minimum observation time --> {satellite_df.time_utc.min()}")
     print(f"Maximum observation time --> {satellite_df.time_utc.max()}")
     print(f"Wind rotation            --> {wind_rotate}")
