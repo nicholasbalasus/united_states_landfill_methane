@@ -111,28 +111,28 @@ if __name__ == "__main__":
             # Doing this first speeds up the polygon code.
             f = "%Y-%m-%dT%H:%M:%S.%fZ"
             satellite_time = pd.to_datetime(ds["time_utc"].values, format=f)
-            valid1 = (satellite_time >= start_time)
-            valid1 &= (satellite_time < end_time)
-            valid1 &= (ds["longitude_bounds"].values.ptp(axis=1) < 5)
+            val1 = (satellite_time >= start_time)
+            val1 &= (satellite_time < end_time)
+            val1 &= (ds["longitude_bounds"].values.ptp(axis=1) < 5)
             sc = ((ds["surface_classification"].values.astype("uint8") & 0x03).
                    astype(int))
-            valid1 &= ~(sc == 1) # Over water
-            valid1 &= ~((sc == 3) | ((sc == 2) & (ds["chi_square_SWIR"].values
+            val1 &= ~(sc == 1) # Over water
+            val1 &= ~((sc == 3) | ((sc == 2) & (ds["chi_square_SWIR"].values
                                                 > 20000))) # Coastal
 
             # Make a GeoSeries of the satellite polygons.
-            lat_corners = ds["latitude_bounds"].values[valid1]
-            lon_corners = ds["longitude_bounds"].values[valid1]
+            lat_corners = ds["latitude_bounds"].values[val1]
+            lon_corners = ds["longitude_bounds"].values[val1]
             sat_polygons = gpd.GeoSeries(
                         [geometry.Polygon(zip(lon_corners[i],lat_corners[i]))
                          for i in range(len(lat_corners))])
 
             # Filter out retrievals that don't intersect our region.
-            valid2 = sat_polygons.intersects(region)
+            val2 = sat_polygons.intersects(region)
 
             # Calculate the area in square meters
             # Also get the orbit number for each observation
-            polygons = list(sat_polygons[valid2])
+            polygons = list(sat_polygons[val2])
             geod = Geod(ellps="WGS84")
             areas, orbits = [],[]
             for i in range(len(polygons)):
@@ -141,18 +141,18 @@ if __name__ == "__main__":
 
             # Make a DataFrame that only includes our valid values
             satellite_data = pd.DataFrame(
-                {"lat_center": ds["latitude"].values[valid1][valid2],
-                 "lon_center": ds["longitude"].values[valid1][valid2],
+                {"lat_center": ds["latitude"].values[val1][val2],
+                 "lon_center": ds["longitude"].values[val1][val2],
                  "orbit_number": orbits,
-                 "time_utc": satellite_time[valid1][valid2],
+                 "time_utc": satellite_time[val1][val2],
                  "polygon": polygons,
                  "polygon_area_m2": areas,
                  "xch4_ppb": (ds["methane_mixing_ratio_blended"]
-                              .values[valid1][valid2]),
+                              .values[val1][val2]),
                  "dry_air_mol_m2": np.sum(ds["dry_air_subcolumns"]
-                                          .values[valid1][valid2],axis=1),
-                 "albedo": ds["surface_albedo_SWIR"].values[valid1][valid2],
-                 "aerosol_size": ds["aerosol_size"].values[valid1][valid2],
+                                          .values[val1][val2],axis=1),
+                 "albedo": ds["surface_albedo_SWIR"].values[val1][val2],
+                 "aerosol_size": ds["aerosol_size"].values[val1][val2],
                 })
 
         return satellite_data
