@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from cmcrameri import cm
 
-def oversampling(source_lon, source_lat):
+def oversampling(source_lon, source_lat, facility):
     """ Oversamples with wind rotation around a given source (2019-2022)
     Parameters
     ----------
@@ -17,11 +17,13 @@ def oversampling(source_lon, source_lat):
         Longitude of the source to be rotated around
     source_lat : float
         Latitude of the source to be rotated around
+    facility : str
+        Facility name which is only used in the file name 
     
     Returns
     -------
     none : none
-        Saves i.pkl (for i = 1-4) files of the oversampled data
+        Saves output/{facility}-{year}.pkl files of the oversampled data
     """
 
     # Oversample for a 0.6° x 0.6° domain centered on the source
@@ -33,8 +35,8 @@ def oversampling(source_lon, source_lat):
     lat_res, lon_res = 0.01, 0.01
 
     # Oversample for 2019, 2020, 2021, 2022
-    for idx,year in enumerate(range(2019,2023)):
-        name = f"{idx+1}"
+    for year in range(2019,2023):
+        name = f"output/{facility}-{year}"
         start_time = f"{year}-01-01"
         end_time = f"{year+1}-01-01"
         wind_rotate = True
