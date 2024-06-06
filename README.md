@@ -14,7 +14,7 @@ Emissions report from individual landfills are scraped from the EPA [FLIGHT](htt
 The data needed are (1) blended TROPOMI+GOSAT and (2) HRRR data (winds, temperature, surface pressure, precipitation). First, go to `config.py` and specify the directories where each of these datasets can be stored. Then, run the corresponding Python script for each in `scripts/`. I use SLURM to allocate resources for each job:
 ```
 # Blended TROPOMI+GOSAT
-sbatch -J blended -p sapphire -t 0-24:00 --mem=112000 -c 112 \
+sbatch -J blended -p sapphire -t 0-24:00 --mem=1000000 -c 112 \
        --wrap "source ~/.bashrc; micromamba activate ldf_env; \
                python -B -m scripts.download-blended"
 

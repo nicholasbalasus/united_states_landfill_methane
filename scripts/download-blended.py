@@ -64,19 +64,18 @@ if __name__ == "__main__":
     blended_files = sorted(glob.glob(blended_dir+"/*.nc"))
     orb = [int(re.search(r'_(\d{5})_',f).groups(0)[0]) for f in blended_files]
 
-    def add_idxs(file, this_idxs):
+    def add_idxs(file, orbit_num):
+        this_idxs = idxs.loc[idxs["orbit"] == orbit_num].reset_index(drop=True)
         with Dataset(file, "r+") as ds:
             for var in ["across_track_index","along_track_index"]:
                 ds.createVariable(var, "int16", ("nobs"))
                 ds.variables[var][:] = this_idxs[var]
             for var in ["longitude", "latitude"]:
                 assert np.array_equal(np.array(this_idxs[var]),
-                                      np.array(ds[var][:]))
+                                        np.array(ds[var][:]))
 
-    inputs = [(blended_files[i],
-               idxs.loc[idxs["orbit"] == orb[i]].reset_index(drop=True))
-              for i in range(len(orb))]
+    inputs = [(blended_files[i], orb[i]) for i in range(len(orb))]
     with multiprocessing.Pool() as pool:
-        pool.starmap(add_idxs, inputs)
+        pool.starmap(add_idxs, inputs[0:50])
         pool.close()
         pool.join()
