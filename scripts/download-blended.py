@@ -77,6 +77,6 @@ if __name__ == "__main__":
                idxs.loc[idxs["orbit"] == orb[i]].reset_index(drop=True))
               for i in range(len(orb))]
     with multiprocessing.Pool() as pool:
-        pool.map(add_idxs, inputs)
+        pool.starmap(add_idxs, inputs)
         pool.close()
         pool.join()
