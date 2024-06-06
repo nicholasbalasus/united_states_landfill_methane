@@ -1,11 +1,18 @@
 # The blended TROPOMI+GOSAT product is available on AWS. This script downloads
-# the files for the date range of 1 January 2019 to 31 December 2022.
+# the files for the date range of 1 January 2019 to 31 December 2022. Variables
+# for the across-track and along-track dimension are also added.
 
 import os
+import re
+import glob
 import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 import multiprocessing
+import subprocess
+import numpy as np
+import xarray as xr
+import pandas as pd
 import sys
 
 # The config file specifies the directory to store the files in.
@@ -43,5 +50,33 @@ if __name__ == "__main__":
 
     with multiprocessing.Pool(112, initialize) as pool:
         pool.map(download_from_s3, s3_paths)
+        pool.close()
+        pool.join()
+
+    # Add across- and along-track index variables. This uses a file I've
+    # stored on AWS that got these variables from the operational files.
+    # This only needs to be done because I didn't archive these variables
+    # when making the Blended data originally.
+    link = (f"https://blended-tropomi-gosat-methane.s3-us-west-2"
+            f".amazonaws.com/misc/indexes.pkl")
+    subprocess.run(["wget", "-q", link, "-P", "resources/"])
+    idxs = pd.read_pickle("resources/indexes.pkl")
+    blended_files = sorted(glob.glob(blended_dir+"/*.nc"))
+    orb = [int(re.search(r'_(\d{5})_',f).groups(0)[0]) for f in blended_files]
+
+    def add_idxs(file, idxs):
+        with xr.open_dataset(file) as ds:
+            for var in ["across_track_index", "along_track_index"]:
+                ds[var] = (ds["pressure_interval"]*0.0 + idxs[var]).astype(int)
+            for var in ["longitude", "latitude"]:
+                assert np.array_equal(np.array(idxs["longitude"]),
+                                      np.array(ds["longitude"].values))
+            ds.to_netcdf(file)
+
+    inputs = [(blended_files[i],
+               idxs.loc[idxs["orbit"] == orb[i]].reset_index(drop=True))
+              for i in range(len(orb))]
+    with multiprocessing.Pool() as pool:
+        pool.map(add_idxs, inputs)
         pool.close()
         pool.join()

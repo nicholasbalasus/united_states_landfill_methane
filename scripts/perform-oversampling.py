@@ -2,18 +2,19 @@
 # bounds, we oversample the Blended TROPOMI data. The data can optionally 
 # be wind-rotated around a source using HRRR winds.
 
-import pandas as pd
-import multiprocessing
-import shapely.geometry as geometry
-import numpy as np
-import time
 import re
-import geopandas as gpd
-from pyproj import Geod
-import xarray as xr
-from geopy import distance
-import glob
 import sys
+import glob
+import time
+import warnings
+import numpy as np
+import pandas as pd
+import xarray as xr
+import multiprocessing
+from pyproj import Geod
+import geopandas as gpd
+from geopy import distance
+import shapely.geometry as geometry
 
 # The config file specifies directories where data is stored.
 # Specify "dont_write_bytecode" to avoid __pycache__ creation.
@@ -100,12 +101,82 @@ if __name__ == "__main__":
     print(f"~~~~~~~~~~~~~~~~ Collecting the satellite data ~~~~~~~~~~~~~~~~~")
     s = time.perf_counter()
 
+    # Function from Tobias Borsdorff for destriping XCH4 data
+    def destripe(ds):
+        
+        # Max dimensions are (4174 x 215)
+        xch4_2d = np.zeros((4174, 215,))*np.nan
+
+        # Fill a 2D array of XCH4
+        for o in range(len(ds["nobs"])):
+            row = ds["along_track_index"].values[o]
+            col = ds["across_track_index"].values[o]
+            xch4_2d[row,col] = ds["methane_mixing_ratio_blended"].values[o]
+
+        # Size of array
+        n = xch4_2d.shape[0]
+        m = xch4_2d.shape[1]
+
+        # Calculate background
+        background = np.zeros((n,m))*np.nan
+        for i in range(m):
+            ws=7
+            if i<ws:
+                st=0
+                sp=i+ws
+            elif m-i<ws:
+                st=i-ws
+                sp=m-1
+            else:
+                st=i-ws
+                sp=i+ws
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", r"All-NaN (slice|axis) encountered")
+                background[:,i]=np.nanmedian(xch4_2d[:,st:sp],axis=1)
+        
+        # Calculate strips
+        this=xch4_2d - background
+        stripes=np.zeros((n,m))*np.nan
+        for j in range(n):
+            ws=100
+            if j<ws:
+                st=0
+                sp=j+ws
+            elif n-j<ws:
+                st=j-ws
+                sp=n-1
+            else:
+                st=j-ws
+                sp=j+ws
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", r"All-NaN (slice|axis) encountered")
+                stripes[j,:]=np.nanmedian(this[st:sp,:],axis=0)
+
+        # Destripe data
+        xch4_2d_destriped = xch4_2d - stripes
+
+        # Form back to 1D
+        destriped_xch4_1d = np.zeros(len(ds["nobs"]))
+        for n in ds["nobs"]:
+            row = ds["along_track_index"].values[n]
+            col = ds["across_track_index"].values[n]
+            destriped_xch4_1d[n] = xch4_2d_destriped[row,col]
+
+        # Add as a variable to the dataset and return it
+        var = "xch4_blended_destriped"
+        ds[var] = ds["pressure_interval"]*0.0 + destriped_xch4_1d
+
+        return ds
+
     # Function that filters the blended data one netCDF file at a time.
     # Retrievals that are coastal or over water and those that are greater than
-    # 5° longitude in width are filtered out.
+    # 5° longitude in width are filtered out. Destriping is applied.
     def filter_blended_retrievals(file, region, start_time, end_time):
 
         with xr.open_dataset(file) as ds:
+
+            # Destripe the XCH4 data following Borsdorff et al. (2024).
+            ds = destripe(ds)
 
             # Perform an initial filtering by time, antimerdian, surface.
             # Doing this first speeds up the polygon code.
@@ -149,6 +220,8 @@ if __name__ == "__main__":
                  "polygon_area_m2": areas,
                  "xch4_ppb": (ds["methane_mixing_ratio_blended"]
                               .values[val1][val2]),
+                 "xch4_destriped_ppb": (ds["xch4_blended_destriped"]
+                                        .values[val1][val2]),
                  "dry_air_mol_m2": np.sum(ds["dry_air_subcolumns"]
                                           .values[val1][val2],axis=1),
                  "albedo": ds["surface_albedo_SWIR"].values[val1][val2],
@@ -191,7 +264,7 @@ if __name__ == "__main__":
             np.max([(lat_max - lat_min), (lon_max - lon_min)]))
         with multiprocessing.Pool() as pool:
             inputs = [(file, region, start_time, end_time)
-                        for file in files]
+                      for file in files]
             results = pool.starmap(filter_blended_retrievals, inputs)
             pool.close()
             pool.join()
