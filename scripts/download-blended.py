@@ -11,7 +11,7 @@ from botocore.config import Config
 import multiprocessing
 import subprocess
 import numpy as np
-import xarray as xr
+from netCDF4 import Dataset
 import pandas as pd
 import sys
 
@@ -64,14 +64,14 @@ if __name__ == "__main__":
     blended_files = sorted(glob.glob(blended_dir+"/*.nc"))
     orb = [int(re.search(r'_(\d{5})_',f).groups(0)[0]) for f in blended_files]
 
-    def add_idxs(file, idxs):
-        with xr.open_dataset(file) as ds:
-            for var in ["across_track_index", "along_track_index"]:
-                ds[var] = (ds["pressure_interval"]*0.0 + idxs[var]).astype(int)
+    def add_idxs(file, this_idxs):
+        with Dataset(file, "r+") as ds:
+            for var in ["across_track_index","along_track_index"]:
+                ds.createVariable(var, "int16", ("nobs"))
+                ds.variables[var][:] = this_idxs[var]
             for var in ["longitude", "latitude"]:
-                assert np.array_equal(np.array(idxs["longitude"]),
-                                      np.array(ds["longitude"].values))
-            ds.to_netcdf(file)
+                assert np.array_equal(np.array(this_idxs[var]),
+                                      np.array(ds[var][:]))
 
     inputs = [(blended_files[i],
                idxs.loc[idxs["orbit"] == orb[i]].reset_index(drop=True))
