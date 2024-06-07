@@ -76,6 +76,6 @@ if __name__ == "__main__":
 
     inputs = [(blended_files[i], orb[i]) for i in range(len(orb))]
     with multiprocessing.Pool() as pool:
-        pool.starmap(add_idxs, inputs[0:50])
+        pool.starmap(add_idxs, inputs)
         pool.close()
         pool.join()
