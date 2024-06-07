@@ -13,6 +13,7 @@ import subprocess
 import numpy as np
 from netCDF4 import Dataset
 import pandas as pd
+import warnings
 import sys
 
 # The config file specifies the directory to store the files in.
@@ -77,5 +78,81 @@ if __name__ == "__main__":
     inputs = [(blended_files[i], orb[i]) for i in range(len(orb))]
     with multiprocessing.Pool() as pool:
         pool.starmap(add_idxs, inputs)
+        pool.close()
+        pool.join()
+
+    # Follow procedure from Tobias Borsdorff for destriping XCH4 data
+    def destripe(file):
+        with Dataset(file, "r+") as ds:
+            
+            # Max dimensions are (4174 x 215)
+            xch4_2d = np.zeros((4174, 215,))*np.nan
+
+            # Fill a 2D array of XCH4
+            for o in range(len(ds["qa_value"])):
+                row = ds["along_track_index"][:][o]
+                col = ds["across_track_index"][:][o]
+                xch4_2d[row,col] = ds["methane_mixing_ratio_blended"][:][o]
+
+            # Size of array
+            n = xch4_2d.shape[0]
+            m = xch4_2d.shape[1]
+
+            # Calculate background
+            background = np.zeros((n,m))*np.nan
+            for i in range(m):
+                ws=7
+                if i<ws:
+                    st=0
+                    sp=i+ws
+                elif m-i<ws:
+                    st=i-ws
+                    sp=m-1
+                else:
+                    st=i-ws
+                    sp=i+ws
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore",
+                                            r"All-NaN (slice|axis) encountered")
+                    background[:,i]=np.nanmedian(xch4_2d[:,st:sp],axis=1)
+            
+            # Calculate strips
+            this=xch4_2d - background
+            stripes=np.zeros((n,m))*np.nan
+            for j in range(n):
+                ws=100
+                if j<ws:
+                    st=0
+                    sp=j+ws
+                elif n-j<ws:
+                    st=j-ws
+                    sp=n-1
+                else:
+                    st=j-ws
+                    sp=j+ws
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore",
+                                            r"All-NaN (slice|axis) encountered")
+                    stripes[j,:]=np.nanmedian(this[st:sp,:],axis=0)
+
+            # Destripe data
+            xch4_2d_destriped = xch4_2d - stripes
+
+            # Form back to 1D
+            destriped_xch4_1d = np.zeros(len(ds["qa_value"][:]))
+            for o in range(len(ds["qa_value"])):
+                row = ds["along_track_index"][:][o]
+                col = ds["across_track_index"][:][o]
+                destriped_xch4_1d[o] = xch4_2d_destriped[row,col]
+
+            # Create and fill variables
+            var = "methane_mixing_ratio_blended_destriped"
+            ds.createVariable(var, ds["methane_mixing_ratio_blended"].datatype,
+                              ('nobs'))
+            ds[var][:] = destriped_xch4_1d
+
+    # Use multiple cores to apply destriping
+    with multiprocessing.Pool() as pool:
+        pool.map(destripe, blended_files)
         pool.close()
         pool.join()
