@@ -270,7 +270,6 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
             if verbose:
                 print(f"Setting waste-in-place data to NaN for {id} & {year}")
             df.loc[idx,"Waste_In_Place_Total"] = np.nan
-            df.loc[idx,"Waste_In_Place_Last_30_Yr"] = np.nan
             df.loc[idx,"Waste_Added_This_Yr"] = np.nan
 
     return df
