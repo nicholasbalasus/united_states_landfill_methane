@@ -161,7 +161,6 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
         if np.isnan(df.loc[idx,"Emis_Backward"]):
             df.loc[idx,"If_All_Forward"] = df.loc[idx,"Emis_Reported"]
             df.loc[idx,"If_All_Backward"] = df.loc[idx,"Emis_Reported"]
-            df.loc[idx,"If_All_Higher"] = df.loc[idx,"Emis_Reported"]
             if df.loc[idx,"Gas_Collection"] != False:
                 # This covers edge cases with collection but w/o both reports
                 backwards = df.loc[idx,"Emis_Backward"]
@@ -172,8 +171,6 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
         else:
             df.loc[idx,"If_All_Forward"] = df.loc[idx,"Emis_Forward"]
             df.loc[idx,"If_All_Backward"] = df.loc[idx,"Emis_Backward"]
-            df.loc[idx,"If_All_Higher"] = max(df.loc[idx,"Emis_Forward"],
-                                              df.loc[idx,"Emis_Backward"])
 
             reported = df.loc[idx,"Emis_Reported"]
             if abs(df.loc[idx,"Emis_Forward"] - reported) < 25:
