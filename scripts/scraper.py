@@ -59,7 +59,8 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
             years.append(year)
 
     # Initialize DataFrame
-    df = pd.DataFrame({"company": pd.Series((), dtype="str")})
+    df = pd.DataFrame({"company": pd.Series((), dtype="str"),
+                       "If_Gen_Rec_0": pd.Series((), dtype="bool")})
 
     # For each year, scrape the data about this facility
     for idx,year in enumerate(years):
@@ -78,7 +79,7 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
         df.loc[idx,"longitude"] = subset.iloc[0]["LONGITUDE"]
 
         # Read first page of FLIGHT to get the following variables:
-        # [Emis_Reported, Emis_Forward, Emis_Backward, Gas_Collection]
+        # [Emis_Reported, Emis_Generation_First, Emis_Recovery_First, Gas_Collection]
         url = (f"https://ghgdata.epa.gov/ghgp/service/facilityDetail/"
                f"{year}?id={id}&ds=E&et=&popup=true")
         response = recurisve_requests(url)
@@ -102,7 +103,7 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
 
         df.loc[idx,"Emis_Reported"] = float(
             data["Municipal Landfills"].replace(",",""))
-        labels = ["Emis_Forward", "Emis_Backward"]
+        labels = ["Emis_Generation_First", "Emis_Recovery_First"]
         begin = "Landfill emissions estimated from "
         ends = ["modeled methane generation and other factors",
                 "methane recovery, destruction and other factors"]
@@ -158,27 +159,33 @@ def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
                     print(f"Missing {key} for {id} & {year}... setting NaN")
 
         # Classify the type of report from the landfill
-        if np.isnan(df.loc[idx,"Emis_Backward"]):
-            df.loc[idx,"If_All_Forward"] = df.loc[idx,"Emis_Reported"]
-            df.loc[idx,"If_All_Backward"] = df.loc[idx,"Emis_Reported"]
+        if np.isnan(df.loc[idx,"Emis_Recovery_First"]):
+            df.loc[idx,"If_All_Generation_First"] = df.loc[idx,"Emis_Reported"]
+            df.loc[idx,"If_All_Recovery_First"] = df.loc[idx,"Emis_Reported"]
             if df.loc[idx,"Gas_Collection"] != False:
                 # This covers edge cases with collection but w/o both reports
-                backwards = df.loc[idx,"Emis_Backward"]
-                assert backwards == 0.0 or np.isnan(backwards), f"{id} & {year}"
-                df.loc[idx,"Type"] = "Forward"
+                rec_first = df.loc[idx,"Emis_Recovery_First"]
+                assert rec_first == 0.0 or np.isnan(rec_first), f"{id} & {year}"
+                df.loc[idx,"Type"] = "Chose_Generation_First"
             else:
-                df.loc[idx,"Type"] = "No Gas Collection"
+                df.loc[idx,"Type"] = "No_Gas_Collection"
         else:
-            df.loc[idx,"If_All_Forward"] = df.loc[idx,"Emis_Forward"]
-            df.loc[idx,"If_All_Backward"] = df.loc[idx,"Emis_Backward"]
-
-            reported = df.loc[idx,"Emis_Reported"]
-            if abs(df.loc[idx,"Emis_Forward"] - reported) < 25:
-                df.loc[idx,"Type"] = "Forward"
-            elif abs(df.loc[idx,"Emis_Backward"] - reported) < 25:
-                df.loc[idx,"Type"] = "Backward"
+            # If the landfill is forced to use generation-first
+            if df.loc[idx,"If_Gen_Rec_0"] == True:
+                df.loc[idx,"If_All_Generation_First"] = df.loc[idx,"Emis_Generation_First"]
+                df.loc[idx,"If_All_Recovery_First"] = df.loc[idx,"Emis_Generation_First"]
+                df.loc[idx,"Type"] = "Forced_Generation_First"
             else:
-                df.loc[idx,"Type"] = "Other"
+                df.loc[idx,"If_All_Generation_First"] = df.loc[idx,"Emis_Generation_First"]
+                df.loc[idx,"If_All_Recovery_First"] = df.loc[idx,"Emis_Recovery_First"]
+
+                reported = df.loc[idx,"Emis_Reported"]
+                if abs(df.loc[idx,"Emis_Generation_First"] - reported) < 25:
+                    df.loc[idx,"Type"] = "Chose_Generation_First"
+                elif abs(df.loc[idx,"Emis_Recovery_First"] - reported) < 25:
+                    df.loc[idx,"Type"] = "Chose_Recovery_First"
+                else:
+                    df.loc[idx,"Type"] = "Other"
 
     # Use most recent report to get waste-in-place data
     search_year = years[-1]
