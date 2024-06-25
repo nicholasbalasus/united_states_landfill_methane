@@ -1,5 +1,5 @@
 # The blended TROPOMI+GOSAT product is available on AWS. This script downloads
-# the files for the date range of 1 January 2019 to 31 December 2022. Variables
+# the files for the date range of 1 January 2019 to 31 December 2023. Variables
 # for the across-track and along-track dimension are also added.
 
 import os
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     # Collect names of paths
     months = ([f"{y}-{str(m).zfill(2)}" for m in range(1,13)
-               for y in range(2019,2023)])
+               for y in range(2019,2024)])
     bucket_name = "blended-tropomi-gosat-methane"
     s3_paths = []
     for month in months:

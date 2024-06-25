@@ -20,8 +20,8 @@ sbatch -J blended -p sapphire -t 0-24:00 --mem=1000000 -c 112 \
 
 # HRRR Data
 months=()
-for i in {0..48}; do months+=( $(date -d "20190101+${i} month" +%Y-%m-%d) ); done
-for i in {0..47}; do
+for i in {0..60}; do months+=( $(date -d "20190101+${i} month" +%Y-%m-%d) ); done
+for i in {0..59}; do
 sbatch -J hrrr -p sapphire -t 0-24:00 --mem=500000 -c 48 \
         --wrap "source ~/.bashrc; micromamba activate ldf_env; \
         python -B -m scripts.download-hrrr ${months[i]} ${months[i+1]}"
