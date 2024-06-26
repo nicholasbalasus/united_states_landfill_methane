@@ -148,11 +148,8 @@ if __name__ == "__main__":
                  "time_utc": satellite_time[val1][val2],
                  "polygon": polygons,
                  "polygon_area_m2": areas,
-                 "xch4_ppb": (ds["methane_mixing_ratio_blended"]
+                 "xch4_ppb": (ds["methane_mixing_ratio_blended_destriped"]
                               .values[val1][val2]),
-                 "xch4_destriped_ppb": (
-                     ds["methane_mixing_ratio_blended_destriped"]
-                     .values[val1][val2]),
                  "dry_air_mol_m2": np.sum(ds["dry_air_subcolumns"]
                                           .values[val1][val2],axis=1),
                  "albedo": ds["surface_albedo_SWIR"].values[val1][val2],
