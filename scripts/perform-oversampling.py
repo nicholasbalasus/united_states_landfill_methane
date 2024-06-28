@@ -285,6 +285,11 @@ if __name__ == "__main__":
         valid_idx = sat_polygons.intersects(oversampling_region)
         satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
+    # Drop anomalous observations
+    valid_idx = satellite_df["xch4_ppb"] > np.percentile(satellite_df["xch4_ppb"], 0.5)
+    valid_idx &= satellite_df["xch4_ppb"] < np.percentile(satellite_df["xch4_ppb"], 99.5)
+    satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
+
     print(f"Number of observations   --> {len(satellite_df)}")
     print(f"Minimum observation time --> {satellite_df.time_utc.min()}")
     print(f"Maximum observation time --> {satellite_df.time_utc.max()}")
