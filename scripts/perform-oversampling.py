@@ -286,8 +286,9 @@ if __name__ == "__main__":
         satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
     # Drop anomalous observations
-    valid_idx = satellite_df["xch4_ppb"] > np.percentile(satellite_df["xch4_ppb"], 0.5)
-    valid_idx &= satellite_df["xch4_ppb"] < np.percentile(satellite_df["xch4_ppb"], 99.5)
+    max = satellite_df["xch4_ppb"].mean() + 3*satellite_df["xch4_ppb"].std()
+    min = satellite_df["xch4_ppb"].mean() - 3*satellite_df["xch4_ppb"].std()
+    valid_idx = (satellite_df["xch4_ppb"] > min) & (satellite_df["xch4_ppb"] < max)
     satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
     print(f"Number of observations   --> {len(satellite_df)}")
