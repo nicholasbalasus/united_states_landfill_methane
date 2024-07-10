@@ -16,7 +16,7 @@ from pyproj import Geod
 import geopandas as gpd
 from geopy import distance
 import shapely.geometry as geometry
-with open("../landfills.json", "r") as f:
+with open("config.json", "r") as f:
     config = json.load(f)
 
 # Input parameters to determine time and spatial range to oversample.

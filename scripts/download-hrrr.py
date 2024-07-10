@@ -14,7 +14,7 @@ import subprocess
 import os
 import sys
 import json
-with open("../landfills.json", "r") as f:
+with open("../config.json", "r") as f:
     config = json.load(f)
 
 # The two inputs to this script should be the start date ("2019-01-01")

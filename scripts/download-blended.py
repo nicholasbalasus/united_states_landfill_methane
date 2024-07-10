@@ -15,7 +15,7 @@ from netCDF4 import Dataset
 import pandas as pd
 import warnings
 import json
-with open("../landfills.json", "r") as f:
+with open("../config.json", "r") as f:
     config = json.load(f)
 
 if __name__ == "__main__":
