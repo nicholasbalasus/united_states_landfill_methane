@@ -31,7 +31,7 @@ def recurisve_requests(url, tries=0):
     except:
         return recurisve_requests(url, tries+1)
     
-def scrape_flight_ghgrp(id, flightXLS="../resources/flight.xls", verbose=False):
+def scrape_flight_ghgrp(id, flightXLS="resources/flight.xls", verbose=False):
     """Scrapes FLIGHT database to get information about a given GHGRP ID
     Parameters
     ----------

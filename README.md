@@ -24,7 +24,7 @@ done
 ```
 
 ## Running the analysis
-The file `config.json` lists the four landfills along with their coordinates and GHGRP IDs. The Python script `assemble.py` will oversample TROPOMI data for 2019-2023 for each of the landfills, apply a cross sectional flux analysis to infer emissions from the resulting plumes, and scrape relevant data about this landfill from the EPA FLIGHT tool.
+The file `config.json` lists the four landfills along with their coordinates and GHGRP IDs. The Python script `assemble.py` will oversample TROPOMI data for 2019-2023 for each of the landfills, apply a cross sectional flux analysis to infer emissions from the resulting plumes, and scrape relevant data from the EPA FLIGHT tool.
 ```
 sbatch -J assemble -p sapphire -t 0-01:00 --mem=64000 -c 4 \
         --wrap "source ~/.bashrc; micromamba activate ldf_env; \
