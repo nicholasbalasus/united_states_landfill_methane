@@ -1,0 +1,11 @@
+{
+    "blended_dir": "/n/holylfs05/LABS/jacob_lab/Users/nbalasus/us_landfills/blended",
+    "hrrr_dir": "/n/holylfs05/LABS/jacob_lab/Users/nbalasus/us_landfills/hrrr",
+    "landfills": {
+        "sampson": {"lon": -78.464, "lat": 34.983},
+        "charlotte": {"lon": -80.658, "lat": 35.341},
+        "lee": {"lon": -80.272, "lat": 34.178},
+        "springhill": {"lon": -85.439, "lat": 30.923}
+    }
+}
+

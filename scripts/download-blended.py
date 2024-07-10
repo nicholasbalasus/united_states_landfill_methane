@@ -14,13 +14,9 @@ import numpy as np
 from netCDF4 import Dataset
 import pandas as pd
 import warnings
-import sys
-
-# The config file specifies the directory to store the files in.
-# Specify "dont_write_bytecode" to avoid __pycache__ creation.
-sys.dont_write_bytecode = True
-sys.path.append('..')
-from config import blended_dir
+import json
+with open("../landfills.json", "r") as f:
+    config = json.load(f)
 
 if __name__ == "__main__":
     
@@ -42,11 +38,11 @@ if __name__ == "__main__":
             s3_paths.append(k["Key"])
 
     # Download the files using all 112 cores
-    os.makedirs(blended_dir, exist_ok=True)
+    os.makedirs(config["blended_dir"], exist_ok=True)
 
     def download_from_s3(s3_path):
         file = os.path.basename(s3_path)
-        local_file_path = os.path.join(blended_dir,file)
+        local_file_path = os.path.join(config["blended_dir"],file)
         s3.download_file(bucket_name, s3_path, local_file_path)
 
     with multiprocessing.Pool(112, initialize) as pool:
@@ -62,7 +58,7 @@ if __name__ == "__main__":
             f".amazonaws.com/misc/indexes.pkl")
     subprocess.run(["wget", "-q", link, "-P", "resources/"])
     idxs = pd.read_pickle("resources/indexes.pkl")
-    blended_files = sorted(glob.glob(blended_dir+"/*.nc"))
+    blended_files = sorted(glob.glob(config["blended_dir"]+"/*.nc"))
     orb = [int(re.search(r'_(\d{5})_',f).groups(0)[0]) for f in blended_files]
 
     def add_idxs(file, orbit_num):

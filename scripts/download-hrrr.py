@@ -13,11 +13,9 @@ import multiprocessing
 import subprocess
 import os
 import sys
-
-# The config file specifies the directory to store the files in.
-# Specify "dont_write_bytecode" to avoid __pycache__ creation.
-sys.dont_write_bytecode = True
-from config import hrrr_dir
+import json
+with open("../landfills.json", "r") as f:
+    config = json.load(f)
 
 # The two inputs to this script should be the start date ("2019-01-01")
 # and the (exclusive) end date ("2019-02-01") for getting hourly data.
@@ -120,7 +118,7 @@ if __name__ == "__main__":
     # From the Jan 1, 2019 00:00:00 file, we will get the values for
     # x, y, lon, and lon. We check to make sure these longitudes and
     # latitudes match all of the files that we open.
-    tmp_dir = f"{hrrr_dir}/hrrr_tmp_{start_date}"
+    tmp_dir = f"{config['hrrr_dir']}/hrrr_tmp_{start_date}"
     os.makedirs(tmp_dir, exist_ok=True)
     link = (f"https://noaa-hrrr-bdp-pds.s3.amazonaws.com/hrrr."
             f"20190101/conus/hrrr.t00z.wrfnatf00.grib2")
@@ -196,4 +194,4 @@ if __name__ == "__main__":
                         coords=dict(
                         y=(["y"], y), x=(["x"], x),time=(["time"], time))
                         )
-    hrrr.to_netcdf(f"{hrrr_dir}/hrrr_{start_date}.nc")
+    hrrr.to_netcdf(f"{config['hrrr_dir']}/hrrr_{start_date}.nc")

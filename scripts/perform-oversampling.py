@@ -4,6 +4,7 @@
 
 import re
 import sys
+import json
 import glob
 import time
 import warnings
@@ -15,12 +16,8 @@ from pyproj import Geod
 import geopandas as gpd
 from geopy import distance
 import shapely.geometry as geometry
-
-# The config file specifies directories where data is stored.
-# Specify "dont_write_bytecode" to avoid __pycache__ creation.
-sys.dont_write_bytecode = True
-sys.path.append("..")
-from config import blended_dir, hrrr_dir
+with open("../landfills.json", "r") as f:
+    config = json.load(f)
 
 # Input parameters to determine time and spatial range to oversample.
 start_time  = pd.to_datetime(f"{sys.argv[1]} 00:00:00")
@@ -159,7 +156,7 @@ if __name__ == "__main__":
         return satellite_data
 
     # List of blended files
-    files = sorted(glob.glob(blended_dir + "/*.nc"))
+    files = sorted(glob.glob(config['blended_dir'] + "/*.nc"))
 
     # Define our oversampling region.
     oversampling_region = geometry.Polygon(zip(
@@ -201,7 +198,7 @@ if __name__ == "__main__":
         # Now, perform the wind rotation on the remaining polygons.            
         # Use a sample HRRR file to get the x,y indexes of the grid cells
         # within 5 km of the source coordinates.
-        file = f"{hrrr_dir}/hrrr_2019-01-01.nc"
+        file = f"{config['hrrr_dir']}/hrrr_2019-01-01.nc"
         with xr.open_dataset(file) as ds:
             hrrr_lons = ds["lon"].values - 360
             hrrr_lats = ds["lat"].values
@@ -226,7 +223,7 @@ if __name__ == "__main__":
         t = np.array((), dtype="datetime64[ns]")
         u = np.array((), dtype="float32")
         v = np.array((), dtype="float32")
-        files = sorted(glob.glob(f"{hrrr_dir}/*.nc"))
+        files = sorted(glob.glob(f"{config['hrrr_dir']}/*.nc"))
         for file in files:
             with xr.open_dataset(file) as ds:
                 ds_mean = ds.sel(y=ys, x=xs).mean(dim=["y","x"])
