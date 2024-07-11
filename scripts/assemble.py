@@ -39,7 +39,7 @@ if __name__ == "__main__":
             
             # Submit the job using SLURM, waiting if this is the last job
             command = [
-                "sbatch", "-p", "sapphire,huce_ice", "-t", "180",
+                "sbatch", "-p", "sapphire,huce_ice", "-t", "30",
                 "--mem", "128000", "-c", "64", "--wrap", (f"source ~/.bashrc; "
                 f"micromamba activate ldf_env; "
                 f"python scripts/perform-oversampling.py "
