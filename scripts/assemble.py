@@ -102,6 +102,7 @@ if __name__ == "__main__":
                     Q_best.append(transect*U*24*365*1e-6) # [Gg/yr]
             Q_best = np.mean(Q_best)
             assembled[landfill]["data"].loc[idx,"Emis_Satellite"] = Q_best
+            assembled[landfill]["data"].loc[idx,"Wind_Satellite"] = U
 
             # Calculate 95% CI on emissions estimate
             Q_uncert = np.zeros((10000))*np.nan
