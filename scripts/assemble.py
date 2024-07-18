@@ -5,8 +5,10 @@ import json
 import pickle
 import subprocess
 import numpy as np
+import xarray as xr
 import pandas as pd
 import geopandas as gpd
+from geopy import distance
 sys.dont_write_bytecode = True
 sys.path.append("scripts")
 import scraper
@@ -133,7 +135,49 @@ if __name__ == "__main__":
             assembled[landfill]["data"].loc[idx,"Emis_Satellite_Upper"] = Q_u
             assembled[landfill]["data"].loc[idx,"Emis_Satellite_Lower"] = Q_l
 
-    # (4) Save assembled data and cleanup
+    # (4) Gather meteorology data
+    for landfill in config["landfills"].keys():
+
+        source_lon = config["landfills"][landfill]["lon"]
+        source_lat = config["landfills"][landfill]["lat"]
+
+        # Find closest HRRR grid cell
+        files = sorted(glob.glob(config["hrrr_dir"]+"/*.nc"))
+        with xr.open_dataset(files[0]) as ds:
+            hrrr_lons = ds["lon"].values - 360
+            hrrr_lats = ds["lat"].values
+        mask = (np.abs(hrrr_lats - source_lat) < 0.15) &\
+               (np.abs(hrrr_lons - source_lon) < 0.15)
+        nearby_hrrr_lons = hrrr_lons[mask]
+        nearby_hrrr_lats = hrrr_lats[mask]
+        distances = np.zeros((len(nearby_hrrr_lats)))
+        for idx in range(len(distances)):
+            hrrr_grid_cell = (nearby_hrrr_lats[idx], nearby_hrrr_lons[idx])
+            source = (source_lat, source_lon)
+            distances[idx] = distance.distance(hrrr_grid_cell, source).km
+        closest_hrrr_lat = nearby_hrrr_lats[np.argmin(distances)]
+        y,x = np.where(hrrr_lats == closest_hrrr_lat)
+
+        # Get monthly average temp and pressure and summed precipitation
+        temp = np.array((), dtype="float32") # [K]
+        pres = np.array((), dtype="float32") # [Pa]
+        prec = np.array((), dtype="float32") # [kg/m2] = [mm]
+
+        for file in files:
+            with xr.open_dataset(file) as ds:
+                temp = np.append(temp,
+                    ds["temperature"].sel(x=x,y=y).mean(dim="time").values)
+                pres = np.append(pres,
+                    ds["surface_pressure"].sel(x=x,y=y).mean(dim="time").values)
+                prec = np.append(prec,
+                    ds["precip"].sel(x=x,y=y).sum(dim="time").values)
+
+        df = assembled[landfill]["data"]
+        df["temperature"] = np.mean(temp.reshape(-1, 12), axis=1)
+        df["surface_pressure"] = np.mean(pres.reshape(-1, 12), axis=1)
+        df["precip"] = np.sum(prec.reshape(-1, 12), axis=1)
+
+    # (5) Save assembled data and cleanup
     files = glob.glob("notebooks/output/*.pkl")
     for file in files:
         os.remove(file)
