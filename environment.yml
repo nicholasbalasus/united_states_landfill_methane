@@ -7,13 +7,15 @@ dependencies:
   - cfgrib=0.9.10.0
   - netcdf4=1.6.5
   - matplotlib=3.8.3
-  - cartopy=0.22.0
-  - geopandas=0.14.3
   - ipykernel=6.28.0
-  - geopy=2.4.1
   - dask=2024.4.0
   - openpyxl=3.1.0
   - boto3=1.34.75
   - cmcrameri=1.8
   - bs4=4.12.3
   - xlrd=2.0.1
+  - pip=24.0
+  - pip:
+    - geopandas==0.14.3
+    - cartopy==0.22.0
+    - geopy==2.4.1
