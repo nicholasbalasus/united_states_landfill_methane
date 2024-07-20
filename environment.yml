@@ -14,6 +14,7 @@ dependencies:
   - cmcrameri=1.8
   - bs4=4.12.3
   - xlrd=2.0.1
+  - requests=2.32.2
   - pip=24.0
   - pip:
     - geopandas==0.14.3
