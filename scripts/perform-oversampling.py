@@ -289,6 +289,8 @@ if __name__ == "__main__":
     satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
     print(f"Number of observations   --> {len(satellite_df)}")
+    unique_days = len(satellite_df["time_utc"].dt.date.unique())
+    print(f"Unique number of days    --> {unique_days}")
     print(f"Minimum observation time --> {satellite_df.time_utc.min()}")
     print(f"Maximum observation time --> {satellite_df.time_utc.max()}")
     print(f"Wind rotation            --> {wind_rotate}")
