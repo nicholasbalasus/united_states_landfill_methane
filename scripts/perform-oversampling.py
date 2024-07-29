@@ -298,7 +298,7 @@ if __name__ == "__main__":
         print(f"Rotating around lat/lon  --> {source_lat}°/{source_lon}°")
     print(f"Time elapsed             --> {(time.perf_counter()-s)/60:.2f} min")
     print(f"Cores used               --> {num_processes} core(s)")
-    print(f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+    print(f"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
     # With the data now filtered, we can perform the oversampling.
     # We perform a tessellation-style regridding following Zhu et al. (2017).
