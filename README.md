@@ -30,4 +30,4 @@ sbatch -J assemble -p sapphire -t 0-06:00 --mem=64000 -c 4 \
         --wrap "source ~/.bashrc; micromamba activate ldf_env; \
         python -B -m scripts.assemble"
 ```
-The notebooks `epa-ghgrp-figs.ipynb` and `individual-landfill-figs.ipynb` can then be run to produce the Figures for the paper.
+The notebooks `epa-ghgrp-figs.ipynb` and `individual-landfill-figs.ipynb` then produce the figures for the paper.
