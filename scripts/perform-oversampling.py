@@ -288,6 +288,11 @@ if __name__ == "__main__":
     valid_idx = (satellite_df["xch4_ppb"] > min) & (satellite_df["xch4_ppb"] < max)
     satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
+    # Drop low wind speed observations
+    wind_speed = np.sqrt(satellite_df["u"]**2 + satellite_df["v"]**2)
+    valid_idx = wind_speed > 1 # [m/s]
+    satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
+
     print(f"Number of observations   --> {len(satellite_df)}")
     unique_days = len(satellite_df["time_utc"].dt.date.unique())
     print(f"Unique number of days    --> {unique_days}")
@@ -368,8 +373,9 @@ if __name__ == "__main__":
 
     # Put average winds at the source as an attribute in the DataFrame.
     if wind_rotate is True:
-        oversampled_data.attrs["wind_speed_m_s"] = np.mean(
-            np.sqrt(satellite_df["u"]**2 + satellite_df["v"]**2))
+        wind_speed = np.sqrt(satellite_df["u"]**2 + satellite_df["v"]**2)
+        harmonic_mean_wind_speed = len(wind_speed)/np.sum(1/wind_speed)
+        oversampled_data.attrs["wind_speed_m_s"] = harmonic_mean_wind_speed
         oversampled_data.attrs["U_m_s"] = satellite_df["u"]
         oversampled_data.attrs["V_m_s"] = satellite_df["v"]
 

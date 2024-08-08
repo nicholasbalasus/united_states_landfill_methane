@@ -86,6 +86,10 @@ if __name__ == "__main__":
             gdf["csf"] = ((lon_diff > 0) & (lon_diff < 0.1) & (lat_diff < 0.1))
             bkg_xch4 = np.mean(gdf.loc[~gdf["csf"], "xch4_ppb"])
             gdf["delta_xch4_ppb"] = gdf["xch4_ppb"] - bkg_xch4
+
+            # Add attributes from df to gdf
+            for attr in df.attrs.keys():
+                gdf.attrs[attr] = df.attrs[attr]
             assembled[landfill][f"oversampled-{year}"] = gdf
 
             # Calculate emissions best estimate
@@ -126,7 +130,8 @@ if __name__ == "__main__":
                         transect = delta_omega_times_height.sum() # [kg/m]
                         U = np.array((df.attrs["U_m_s"]**2 + 
                                       df.attrs["V_m_s"]**2)**0.5) # [m/s]
-                        U = np.mean(np.random.choice(U, (len(U),)))*3600 # [m/h]
+                        resampled_U = np.random.choice(U, (len(U),))
+                        U = 3600*len(resampled_U)/np.sum(1/resampled_U) # [m/h]
                         e = transect*U*24*365*1e-6 # [Gg/yr]
                         emis = np.append(emis, e)
                 Q_uncert[idy] = np.mean(np.random.choice(emis, (len(emis),)))
