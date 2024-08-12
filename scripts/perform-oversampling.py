@@ -285,13 +285,15 @@ if __name__ == "__main__":
     # Drop anomalous observations
     max = satellite_df["xch4_ppb"].mean() + 3*satellite_df["xch4_ppb"].std()
     min = satellite_df["xch4_ppb"].mean() - 3*satellite_df["xch4_ppb"].std()
-    valid_idx = (satellite_df["xch4_ppb"] > min) & (satellite_df["xch4_ppb"] < max)
+    valid_idx = ((satellite_df["xch4_ppb"] > min) &
+                 (satellite_df["xch4_ppb"] < max))
     satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
     # Drop low wind speed observations
-    wind_speed = np.sqrt(satellite_df["u"]**2 + satellite_df["v"]**2)
-    valid_idx = wind_speed > 1 # [m/s]
-    satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
+    if wind_rotate:
+        wind_speed = np.sqrt(satellite_df["u"]**2 + satellite_df["v"]**2)
+        valid_idx = wind_speed > 1 # [m/s]
+        satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
     print(f"Number of observations   --> {len(satellite_df)}")
     unique_days = len(satellite_df["time_utc"].dt.date.unique())
