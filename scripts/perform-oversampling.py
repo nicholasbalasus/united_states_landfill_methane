@@ -380,6 +380,7 @@ if __name__ == "__main__":
         oversampled_data.attrs["wind_speed_m_s"] = harmonic_mean_wind_speed
         oversampled_data.attrs["U_m_s"] = satellite_df["u"]
         oversampled_data.attrs["V_m_s"] = satellite_df["v"]
+        oversampled_data.attrs["num_days"] = unique_days
 
     # Put times and orbit numbers as an attribute in the DataFrame.
     oversampled_data.attrs["observation_times"] = satellite_df["time_utc"]
