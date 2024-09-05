@@ -1,5 +1,5 @@
 ## Introduction
-This repository contains code for Balasus et al. (2024).
+This repository contains code for [Balasus et al. (2024)](https://arxiv.org/abs/2408.10957).
 
 ## Creating the environment
 I use micromamba as a package manager. You can install it [here](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html). Then, from the command line, run:
