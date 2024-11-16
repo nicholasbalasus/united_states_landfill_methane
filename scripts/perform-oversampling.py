@@ -289,10 +289,11 @@ if __name__ == "__main__":
                  (satellite_df["xch4_ppb"] < max))
     satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
-    # Drop low wind speed observations
+    # Drop low and high wind speed observations
     if wind_rotate:
         wind_speed = np.sqrt(satellite_df["u"]**2 + satellite_df["v"]**2)
         valid_idx = wind_speed > 1 # [m/s]
+        valid_idx &= wind_speed < 10 # [m/s]
         satellite_df = satellite_df.loc[valid_idx].reset_index(drop=True)
 
     print(f"Number of observations   --> {len(satellite_df)}")

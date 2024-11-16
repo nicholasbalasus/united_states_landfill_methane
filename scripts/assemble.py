@@ -54,13 +54,16 @@ if __name__ == "__main__":
             subprocess.run(command)
             count += 1
 
-    # (2) Scrape data from FLIGHT
+    # (2) Get the FLIGHT data
+    with open("resources/landfills_by_id.pkl", "rb") as handle:
+        landfills_by_id = pickle.load(handle)
+
     assembled = {}
     for landfill in config["landfills"].keys():
         assembled[landfill] = {}
         # This function returns all years but we only want 2019 and onward
         id = config["landfills"][landfill]["id"]
-        assembled[landfill]["data"] = (scraper.scrape_flight_ghgrp(id).iloc[9:]
+        assembled[landfill]["data"] = (landfills_by_id[id].iloc[9:]
                                        .reset_index(drop=True))
 
     # (3) Perform emissions estimates
